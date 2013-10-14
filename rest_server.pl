@@ -6,15 +6,14 @@ use JSON::XS;
 use Cache::Memcached::Fast;
 
 my $mp = Data::MessagePack->new();
-my $dbh = DBI->connect('DBI:mysql:test:localhost:3307', 'root', '');
-my $memd = new Cache::Memcached::Fast({
-    servers => [ { address => 'localhost:11211' } ],
-});
+my $memd;
+my $dbh;
 my $id = 0;
 
 sub fetch_mysql {
     $id++;
     $id = 0 if($id > 10000);
+    $dbh ||= DBI->connect('DBI:mysql:test:localhost:3307', 'root', '');
     my $sth = $dbh->prepare("select name,mail from user where id = ?");
     $sth->execute($id);
     my $row = $sth->fetchrow_hashref;
@@ -24,6 +23,9 @@ sub fetch_mysql {
 
 sub fetch_memcached {
     $id++;
+    $memd ||= new Cache::Memcached::Fast({
+	servers => [ { address => 'localhost:11211' } ],
+    });
     @dat = split(/\|/, $memd->get($id), 2);
     return {name => $dat[0], mail => $dat[1]};
 }
