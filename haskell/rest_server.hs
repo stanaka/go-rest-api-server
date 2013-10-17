@@ -9,6 +9,7 @@ import qualified Data.ByteString.Char8 as BS8
 
 import Control.Monad.Trans.Resource (ResourceT)
 import Data.Aeson.TH (deriveToJSON)
+import Data.Pool (Pool, createPool, withResource)
 import Data.MessagePack (derivePack)
 import Database.MySQL.Simple.QueryResults (QueryResults(..))
 import Network.HTTP.Types
@@ -45,9 +46,14 @@ instance QueryResults User where
 main :: IO ()
 main = do
   uidRef <- newIORef 0
-  mySqlConn <- MySql.connect MySql.defaultConnectInfo
+  mySqlConnPool <- createPool
+    (MySql.connect MySql.defaultConnectInfo)
+    MySql.close
+    1 -- Stripe size
+    0.5 -- Timeout in seconds
+    10 -- Maximum number of connections
   memcachedConn <- Memcached.newMemcacheClient "localhost" 11211
-  runSettings settings $ server uidRef mySqlConn memcachedConn
+  runSettings settings $ server uidRef mySqlConnPool memcachedConn
   where
     settings = defaultSettings
       { settingsPort = 9000
@@ -55,31 +61,31 @@ main = do
 
 server
   :: IORef Int
-  -> MySql.Connection
+  -> Pool MySql.Connection
   -> Memcached.Connection
   -> Application
-server uidRef mySqlConn memcachedConn req = do
+server uidRef mySqlConnPool memcachedConn req = do
   case pathInfo req of
-    [] -> msgpackHandler uidRef mySqlConn
-    ["json"] -> jsonHandler uidRef mySqlConn
+    [] -> msgpackHandler uidRef mySqlConnPool
+    ["json"] -> jsonHandler uidRef mySqlConnPool
     ["mem"] -> msgpackMemcachedHandler uidRef memcachedConn
     ["mem.json"] -> jsonMemcachedHandler uidRef memcachedConn
     _ -> notFound
 
 msgpackHandler
   :: IORef Int
-  -> MySql.Connection
+  -> Pool MySql.Connection
   -> ResourceT IO Response
-msgpackHandler uidRef conn = do
-  user <- liftIO $ fetchMySql uidRef conn
+msgpackHandler uidRef pool = do
+  user <- withResource pool $ liftIO . fetchMySql uidRef
   return $ msgPackResponse user
 
 jsonHandler
   :: IORef Int
-  -> MySql.Connection
+  -> Pool MySql.Connection
   -> ResourceT IO Response
-jsonHandler uidRef conn = do
-  user <- liftIO $ fetchMySql uidRef conn
+jsonHandler uidRef pool = do
+  user <- withResource pool $ liftIO . fetchMySql uidRef
   return $ jsonResponse user
 
 msgpackMemcachedHandler
