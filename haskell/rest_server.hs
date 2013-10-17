@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
-import Control.Applicative ((<$>), (<*>))
 import Control.Monad.Trans (liftIO)
 import Data.ByteString (ByteString)
 import Data.IORef (IORef, newIORef, atomicModifyIORef')
@@ -10,7 +9,6 @@ import qualified Data.ByteString.Char8 as BS8
 import Control.Monad.Trans.Resource (ResourceT)
 import Data.Aeson.TH (deriveToJSON)
 import Data.MessagePack (derivePack)
-import Database.Memcache.Server as Memcached
 import Database.MySQL.Simple.QueryResults (QueryResults(..))
 import Network.HTTP.Types
 import Network.Wai
@@ -19,9 +17,10 @@ import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as AT
 import qualified Data.MessagePack as MsgPack
 import qualified Database.Memcache.Protocol as Memcache
+import qualified Database.Memcache.Server as Memcached
 import qualified Database.MySQL.Simple as MySql
-import qualified Database.MySQL.Simple.Result as MySql (convert)
 import qualified Database.MySQL.Simple.QueryResults as MySql (convertError)
+import qualified Database.MySQL.Simple.Result as MySql (convert)
 
 data User = User
   { userName :: !ByteString
@@ -46,7 +45,7 @@ main :: IO ()
 main = do
   uidRef <- newIORef 0
   mySqlConn <- MySql.connect MySql.defaultConnectInfo
-  memcachedConn <- newMemcacheClient "localhost" 11211
+  memcachedConn <- Memcached.newMemcacheClient "localhost" 11211
   runSettings settings $ server uidRef mySqlConn memcachedConn
   where
     settings = defaultSettings
@@ -111,7 +110,7 @@ fetchMySql uidRef conn = do
       (MySql.Only uid)
   case results of
     [] -> fail "User not found"
-    [user] -> return user
+    user:_ -> return user
 
 fetchMemcached :: IORef Int -> Memcached.Connection -> IO User
 fetchMemcached uidRef conn = do
