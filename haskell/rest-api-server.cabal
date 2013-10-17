@@ -13,6 +13,7 @@ tested-with:         GHC == 7.6.3
 
 executable rest-api-server
   main-is: rest_server.hs
+  ghc-options: -Wall -threaded
   build-depends:
       base >=4.6 && <4.7
     , aeson == 0.6.2.*
