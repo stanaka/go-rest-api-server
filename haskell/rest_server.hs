@@ -7,8 +7,8 @@ import Data.ByteString (ByteString)
 import Data.IORef (IORef, newIORef, atomicModifyIORef')
 import qualified Data.ByteString.Char8 as BS8
 
-import Data.Aeson.TH (deriveJSON)
-import Data.MessagePack (deriveObject)
+import Data.Aeson.TH (deriveToJSON)
+import Data.MessagePack (derivePack)
 import Database.Memcache.Server as Memcached
 import Database.MySQL.Simple.QueryResults (QueryResults(..))
 import Network.HTTP.Types
@@ -27,12 +27,12 @@ data User = User
   , userMail :: !ByteString
   }
 
-deriveJSON AT.defaultOptions
+deriveToJSON AT.defaultOptions
   { AT.fieldLabelModifier = drop 4 }
   ''User
 
 -- MessagePack instances
-deriveObject True ''User
+derivePack True ''User
 
 -- MySQL results instance
 instance QueryResults User where
