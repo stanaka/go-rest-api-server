@@ -3,6 +3,7 @@
 module Main where
 import Control.Monad.Trans (liftIO)
 import Data.ByteString (ByteString)
+import Data.Char (toLower)
 import Data.IORef (IORef, newIORef, atomicModifyIORef')
 import qualified Data.ByteString.Char8 as BS8
 
@@ -28,7 +29,7 @@ data User = User
   }
 
 deriveToJSON AT.defaultOptions
-  { AT.fieldLabelModifier = drop 4 }
+  { AT.fieldLabelModifier = map toLower . drop 4 }
   ''User
 
 -- MessagePack instances
