@@ -112,7 +112,7 @@ func json_handler(w http.ResponseWriter, r *http.Request) {
 
 func json_memcached_handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	res := fetch_mysql()
+	res := fetch_memcached()
 	enc := json.NewEncoder(w)
 	err = enc.Encode(res)
 }
