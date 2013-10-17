@@ -115,7 +115,9 @@ incrementUid ref = atomicModifyIORef' ref update
   where
     update uid = (nextUid, nextUid)
       where
-        nextUid = uid + 1
+        nextUid
+          | uid > 10000 = 0
+          | otherwise = uid + 1
 
 msgPackResponse :: MsgPack.Packable a => a -> Response
 msgPackResponse = responseLBS status202
