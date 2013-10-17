@@ -20,6 +20,7 @@ executable rest-api-server
     , bytestring
     , http-types == 0.8.1.*
     , memcache == 0.0.*
+    , monad-control
     , msgpack == 0.7.2.*
     , mtl
     , mysql-simple == 0.2.2.*

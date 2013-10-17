@@ -1,12 +1,14 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
-import Control.Monad.Trans (liftIO)
+import Control.Monad.Trans (MonadIO(..))
 import Data.ByteString (ByteString)
 import Data.Char (toLower)
 import Data.IORef (IORef, newIORef, atomicModifyIORef')
 import qualified Data.ByteString.Char8 as BS8
 
+import Control.Monad.Trans.Control (MonadBaseControl)
 import Control.Monad.Trans.Resource (ResourceT)
 import Data.Aeson.TH (deriveToJSON)
 import Data.Pool (Pool, createPool, withResource)
@@ -51,7 +53,7 @@ main = do
     MySql.close
     1 -- Stripe size
     0.5 -- Timeout in seconds
-    10 -- Maximum number of connections
+    1 -- Maximum number of connections
   memcachedConn <- Memcached.newMemcacheClient "localhost" 11211
   runSettings settings $ server uidRef mySqlConnPool memcachedConn
   where
@@ -77,7 +79,7 @@ msgpackHandler
   -> Pool MySql.Connection
   -> ResourceT IO Response
 msgpackHandler uidRef pool = do
-  user <- withResource pool $ liftIO . fetchMySql uidRef
+  user <- fetchMySql uidRef pool
   return $ msgPackResponse user
 
 jsonHandler
@@ -85,7 +87,7 @@ jsonHandler
   -> Pool MySql.Connection
   -> ResourceT IO Response
 jsonHandler uidRef pool = do
-  user <- withResource pool $ liftIO . fetchMySql uidRef
+  user <- fetchMySql uidRef pool
   return $ jsonResponse user
 
 msgpackMemcachedHandler
@@ -109,10 +111,15 @@ notFound = return $ responseLBS status404
   [(hContentType, "text/plain")]
   "Not found"
 
-fetchMySql :: IORef Int -> MySql.Connection -> IO User
-fetchMySql uidRef conn = do
-  uid <- incrementUid uidRef
-  results <- MySql.query conn
+fetchMySql
+  :: (MonadIO m, MonadBaseControl IO m)
+  => IORef Int
+  -> Pool MySql.Connection
+  -> m User
+fetchMySql uidRef pool = do
+  uid <- liftIO $ incrementUid uidRef
+  results <- withResource pool $ \conn ->
+    liftIO $ MySql.query conn
       "SELECT name, mail FROM user WHERE id=?"
       (MySql.Only uid)
   case results of
