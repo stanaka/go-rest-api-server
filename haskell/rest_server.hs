@@ -36,10 +36,9 @@ derivePack True ''User
 
 -- MySQL results instance
 instance QueryResults User where
-  convertResults [fName, fMail] [vName, vMail] = User name mail
-    where
-      name = MySql.convert fName vName
-      mail = MySql.convert fMail vMail
+  convertResults [fName, fMail] [vName, vMail] = User
+    (MySql.convert fName vName)
+    (MySql.convert fMail vMail)
   convertResults fs vs = MySql.convertError fs vs 2
 
 main :: IO ()
@@ -102,10 +101,10 @@ fetchMemcached uidRef conn = do
   uid <- incrementUid uidRef
   result <- Memcache.get conn (intToBS uid)
   case result of
+    Nothing -> fail "User not found"
     Just (v, _, _) -> case BS8.split '|' v of
       [name, mail] -> return $ User name mail
       _ -> fail "Failed to parse response"
-    Nothing -> fail "User not found"
   where
     intToBS :: Int -> ByteString
     intToBS = BS8.pack . show
