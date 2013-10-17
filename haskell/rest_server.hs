@@ -123,7 +123,7 @@ fetchMySql uidRef pool = do
       "SELECT name, mail FROM user WHERE id=?"
       (MySql.Only uid)
   case results of
-    [] -> fail "User not found"
+    [] -> fail $ "User not found: " ++ show uid
     user:_ -> return user
 
 fetchMemcached :: IORef Int -> Memcached.Connection -> IO User
@@ -131,10 +131,10 @@ fetchMemcached uidRef conn = do
   uid <- incrementUid uidRef
   result <- Memcache.get conn (intToBS uid)
   case result of
-    Nothing -> fail "User not found"
+    Nothing -> fail $ "User not found: " ++ show uid
     Just (v, _, _) -> case BS8.split '|' v of
       [name, mail] -> return $ User name mail
-      _ -> fail "Failed to parse response"
+      _ -> fail $ "Failed to parse response: " ++ show v
   where
     intToBS :: Int -> ByteString
     intToBS = BS8.pack . show
