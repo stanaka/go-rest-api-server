@@ -22,6 +22,7 @@ executable rest-api-server
     , msgpack == 0.7.2.*
     , mtl
     , mysql-simple == 0.2.2.*
+    , resourcet
     , wai == 1.4.0.*
     , warp == 1.3.10.*
   default-language:    Haskell2010

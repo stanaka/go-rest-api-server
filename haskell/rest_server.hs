@@ -7,6 +7,7 @@ import Data.ByteString (ByteString)
 import Data.IORef (IORef, newIORef, atomicModifyIORef')
 import qualified Data.ByteString.Char8 as BS8
 
+import Control.Monad.Trans.Resource (ResourceT)
 import Data.Aeson.TH (deriveToJSON)
 import Data.MessagePack (derivePack)
 import Database.Memcache.Server as Memcached
@@ -63,26 +64,42 @@ server uidRef mySqlConn memcachedConn req = do
     ["json"] -> jsonHandler uidRef mySqlConn
     ["mem"] -> msgpackMemcachedHandler uidRef memcachedConn
     ["mem.json"] -> jsonMemcachedHandler uidRef memcachedConn
-    _ -> notFound req
+    _ -> notFound
 
+msgpackHandler
+  :: IORef Int
+  -> MySql.Connection
+  -> ResourceT IO Response
 msgpackHandler uidRef conn = do
   user <- liftIO $ fetchMySql uidRef conn
   return $ msgPackResponse user
 
+jsonHandler
+  :: IORef Int
+  -> MySql.Connection
+  -> ResourceT IO Response
 jsonHandler uidRef conn = do
   user <- liftIO $ fetchMySql uidRef conn
   return $ jsonResponse user
 
+msgpackMemcachedHandler
+  :: IORef Int
+  -> Memcached.Connection
+  -> ResourceT IO Response
 msgpackMemcachedHandler uidRef conn = do
   user <- liftIO $ fetchMemcached uidRef conn
   return $ msgPackResponse user
 
+jsonMemcachedHandler
+  :: IORef Int
+  -> Memcached.Connection
+  -> ResourceT IO Response
 jsonMemcachedHandler uidRef conn = do
   user <- liftIO $ fetchMemcached uidRef conn
   return $ jsonResponse user
 
-notFound :: Application
-notFound req = return $ responseLBS status404
+notFound :: ResourceT IO Response
+notFound = return $ responseLBS status404
   [(hContentType, "text/plain")]
   "Not found"
 
