@@ -20,7 +20,8 @@ var mh codec.MsgpackHandle
 
 func main() {
 	var err error
-	db, err := sql.Open("mysql", "root@unix/test")
+	// Edit socket path
+	db, err = sql.Open("mysql", "root@unix(/var/run/mysqld/mysqld.sock)/test")
 	if err != nil {
 		panic(err.Error())
 	}
