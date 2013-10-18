@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/bradfitz/gomemcache/memcache"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/ugorji/go/codec"
@@ -25,6 +26,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	db.SetMaxIdleConns(16)
 	defer db.Close()
 
 	err = db.Ping()
@@ -55,7 +57,8 @@ func fetch_mysql() map[string]interface{} {
 
 	var name string
 	var mail string
-	err := db.QueryRow("SELECT name,mail FROM user WHERE id=?", id).Scan(&name, &mail)
+	query := fmt.Sprintf("SELECT name,mail FROM user WHERE id=%d", id)
+	err := db.QueryRow(query).Scan(&name, &mail)
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("No user with that ID.")
