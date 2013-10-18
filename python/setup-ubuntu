@@ -1,0 +1,5 @@
+#!/bin/sh
+sudo aptitude install python-dev build-essential libmysqlclient-dev wget
+wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py
+sudo python ez_setup.py
+sudo easy_install ujson meinheld MySQL-python msgpack-python
