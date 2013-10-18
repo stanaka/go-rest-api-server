@@ -52,8 +52,8 @@ main = do
     (MySql.connect MySql.defaultConnectInfo)
     MySql.close
     1 -- Stripe size
-    0.5 -- Timeout in seconds
-    1 -- Maximum number of connections
+    10 -- Timeout in seconds
+    5 -- Maximum number of connections
   memcachedConn <- Memcached.newMemcacheClient "localhost" 11211
   runSettings settings $ server uidRef mySqlConnPool memcachedConn
   where
@@ -121,7 +121,7 @@ fetchMySql uidRef pool = do
   results <- withResource pool $ \conn ->
     liftIO $ MySql.query conn
       "SELECT name, mail FROM user WHERE id=?"
-      (MySql.Only uid)
+      (MySql.Only $ show uid)
   case results of
     [] -> fail $ "User not found: " ++ show uid
     user:_ -> return user
