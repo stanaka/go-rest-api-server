@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import meinheld, MySQLdb, msgpack, ujson
 from MySQLdb.cursors import DictCursor
 
@@ -10,6 +11,8 @@ count = 0
 def fetch_mysql():
     global count
     count += 1
+    if count > 1000:
+        count = 0
     cur = con.cursor(DictCursor)
     cur.execute("SELECT name,mail FROM user WHERE id=%d" % count)
     return cur.fetchone()
@@ -25,7 +28,7 @@ def top_handler(env, start_response):
 def json_handler(env, start_response):
     response = ujson.dumps(fetch_mysql())
     start_response("200 OK",
-                   [('Content-Type', 'application/x-msgpack'),
+                   [('Content-Type', 'application/json'),
                     ('Content-Length', str(len(response)))])
     return [response]
 
