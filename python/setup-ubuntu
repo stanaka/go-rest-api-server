@@ -1,0 +1,4 @@
+#!/bin/sh
+sudo aptitude install python-dev build-essential libmysqlclient-dev wget
+sudo python ez_setup.py
+sudo easy_install ujson meinheld MySQL-python msgpack-python
