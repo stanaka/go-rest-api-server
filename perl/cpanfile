@@ -1,0 +1,8 @@
+requires 'Plack', '1.0029';
+requires 'Starman', '0.4008';
+requires 'DBI', '1.628';
+requires 'Data::MessagePack', '0.48';
+requires 'JSON::XS', '2.34';
+requires 'Cache::Memcached::Fast', '0.21';
+requires 'Parallel::ForkManager', '1.05';
+requires 'Furl', '2.19';
