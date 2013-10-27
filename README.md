@@ -21,3 +21,12 @@ delete from containers where name='aaa';
 INSERT INTO `containers` VALUES ('ccc','test','user','id','name|mail','c3','c4','c5','PRIMARY');
 install plugin daemon_memcached soname "libmemcached.so";
 ```
+
+## License
+
+This [repo] is free software, available under [the MIT license]
+[license]. Some code in each sub-directory may be under another license, 
+so please check a README in each directory.
+
+[repo]:    https://github.com/stanaka/go-rest-api-server
+[license]: https://raw.github.com/stanaka/go-rest-api-server/master/LICENSE
